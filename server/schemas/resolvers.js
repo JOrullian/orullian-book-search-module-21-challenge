@@ -1,4 +1,3 @@
-const { deleteBook } = require('../controllers/user-controller');
 const { Book, User } = require('../models');
 const { signToken } = require('../utils/auth');
 
@@ -16,16 +15,14 @@ const resolvers = {
     Mutation: {
         // Create a new user and return token
         createUser: async (parent, { username, email, password }) => {
-            const user = await User.create({ name, email, password });
+            const user = await User.create({ username, email, password });
             const token = signToken(user);
             return { token, user };
         },
 
         // Log user in
-        login: async (parent, { username, email, password }) => {
-            const user = await User.findOne({
-                $or: [{ email }, { username }],
-            });
+        login: async (parent, { email, password }) => {
+            const user = await User.findOne({ email });
 
             if (!user) {
                 throw new Error("Can't find this user");
