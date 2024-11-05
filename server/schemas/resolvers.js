@@ -1,5 +1,15 @@
 const { Book, User } = require('../models');
-const { signToken } = require('../utils/auth');
+const { signToken, AuthenticationError } = require('../utils/auth');
+const fetch = (...args) => import('node-fetch').then(module => module.default(...args));
+
+
+const searchGoogleBooks = async (query) => {
+    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch data from Google Books API');
+    }
+    return await response.json();
+  };
 
 const resolvers = {
     Query: {
@@ -11,10 +21,16 @@ const resolvers = {
             }
             return user;
         },
+        me: async (parent, args, context) => {
+            if (context.user) {
+              return Profile.findOne({ _id: context.user._id });
+            }
+            throw AuthenticationError;
+          },
     },
     Mutation: {
         // Create a new user and return token
-        createUser: async (parent, { username, email, password }) => {
+        addUser: async (parent, { username, email, password }) => {
             const user = await User.create({ username, email, password });
             const token = signToken(user);
             return { token, user };
@@ -50,11 +66,11 @@ const resolvers = {
                 return updatedUser;
             }
 
-            throw new AuthenticationError("You need to be logged in!");
+            throw AuthenticationError;
         },
 
         // Delete a book from the user's savedBooks
-        deleteBook: async (parent, { bookId }, context) => {
+        removeBook: async (parent, { bookId }, context) => {
             if (context.user) {
                 const updatedUser = await User.findOneAndUpdate(
                     { _id: context.user._id },
@@ -69,7 +85,7 @@ const resolvers = {
                 return updatedUser;
             }
 
-            throw new AuthenticationError("You need to be logged in!");
+            throw AuthenticationError;
         },
     },
 };
