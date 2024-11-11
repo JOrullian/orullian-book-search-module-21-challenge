@@ -23,7 +23,7 @@ const resolvers = {
         },
         me: async (parent, args, context) => {
             if (context.user) {
-              return Profile.findOne({ _id: context.user._id });
+              return User.findOne({ _id: context.user._id });
             }
             throw AuthenticationError;
           },
@@ -72,21 +72,25 @@ const resolvers = {
         // Delete a book from the user's savedBooks
         removeBook: async (parent, { bookId }, context) => {
             if (context.user) {
-                const updatedUser = await User.findOneAndUpdate(
-                    { _id: context.user._id },
-                    { $pull: { savedBooks: { bookId } } },
-                    { new: true }
-                )
-
-                if (!updatedUser) {
-                    throw new Error("Couldn't find user with this ID!");
-                }
-
-                return updatedUser;
+              console.log("Authenticated user:", context.user._id);
+              console.log("Removing book with ID:", bookId);
+          
+              const updatedUser = await User.findOneAndUpdate(
+                { _id: context.user._id },
+                { $pull: { savedBooks: { bookId } } },
+                { new: true }
+              );
+          
+              if (!updatedUser) {
+                throw new Error("Couldn't find user with this ID!");
+              }
+          
+              return updatedUser;
             }
-
-            throw AuthenticationError;
-        },
+          
+            console.log("User not authenticated");
+            throw new AuthenticationError("User not authenticated");
+          },          
     },
 };
 
